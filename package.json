@@ -1,0 +1,70 @@
+{
+  "name": "harnify",
+  "version": "0.1.0",
+  "description": "AI agent harness engineering tool — visualize CLAUDE.md, AGENTS.md, skills, and agent config structure",
+  "type": "module",
+  "bin": {
+    "harnify": "dist/cli/index.cjs"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "keywords": [
+    "harness",
+    "CLAUDE.md",
+    "AGENTS.md",
+    "agent-config",
+    "visualization",
+    "token-budget",
+    "lint",
+    "AI",
+    "Claude Code"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@types/node": "^25.3.2",
+    "chokidar": "^5.0.0",
+    "commander": "^14.0.3",
+    "cors": "^2.8.6",
+    "cytoscape": "^3.33.1",
+    "express": "^5.2.1",
+    "glob": "^13.0.6",
+    "gray-matter": "^4.0.3",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "remark-frontmatter": "^5.0.0",
+    "remark-parse": "^11.0.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "unified": "^11.0.5"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/cors": "^2.8.19",
+    "@types/cytoscape": "^3.21.9",
+    "@types/express": "^5.0.6",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.27",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "jsdom": "^28.1.0",
+    "lucide-react": "^0.575.0",
+    "postcss": "^8.5.6",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^3.4.19",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  }
+}
