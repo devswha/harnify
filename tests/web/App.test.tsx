@@ -19,9 +19,11 @@ import App from '../../src/web/App';
 const mockScanResult = {
   files: [
     {
-      path: 'CLAUDE.md',
-      type: 'root-config',
-      tokens: 2340,
+      path: '/project/CLAUDE.md',
+      relativePath: 'CLAUDE.md',
+      type: 'config',
+      tokenInfo: { tokens: 2340, bytes: 9360 },
+      frontmatter: null,
       content: '# Rules',
       lastModified: '2026-02-27T00:00:00Z',
       references: [],
@@ -32,8 +34,8 @@ const mockScanResult = {
       {
         id: 'CLAUDE.md',
         label: 'CLAUDE.md',
-        type: 'root-config',
-        tokens: 2340,
+        type: 'config',
+        tokenInfo: { tokens: 2340, bytes: 9360 },
         path: 'CLAUDE.md',
         lastModified: '2026-02-27T00:00:00Z',
       },

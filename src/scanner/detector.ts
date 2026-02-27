@@ -27,6 +27,11 @@ const EXCLUDED_DIRS = [
   ".nuxt",
 ];
 
+export interface DetectOptions {
+  /** Include ~/.claude/ user-level harness files (default: false) */
+  includeHome?: boolean;
+}
+
 export interface DetectedFile {
   absolutePath: string;
   relativePath: string;
@@ -50,7 +55,8 @@ export function classifyFile(relativePath: string): NodeType {
 }
 
 /** Detect all harness files in a project directory */
-export async function detectHarnessFiles(rootPath: string): Promise<DetectedFile[]> {
+export async function detectHarnessFiles(rootPath: string, options?: DetectOptions): Promise<DetectedFile[]> {
+  const { includeHome = false } = options ?? {};
   const ignore = EXCLUDED_DIRS.map((d) => `**/${d}/**`);
 
   const matches = await glob(HARNESS_PATTERNS, {
@@ -77,31 +83,33 @@ export async function detectHarnessFiles(rootPath: string): Promise<DetectedFile
     });
   }
 
-  // Also check ~/.claude/ for user-level harness files
-  const homeDir = process.env.HOME || process.env.USERPROFILE || "";
-  if (homeDir) {
-    const homePatterns = [
-      ".claude/CLAUDE.md",
-      ".claude/skills/**/*.md",
-    ];
+  // Only scan ~/.claude/ when explicitly opted in
+  if (includeHome) {
+    const homeDir = process.env.HOME || process.env.USERPROFILE || "";
+    if (homeDir) {
+      const homePatterns = [
+        ".claude/CLAUDE.md",
+        ".claude/skills/**/*.md",
+      ];
 
-    const homeMatches = await glob(homePatterns, {
-      cwd: homeDir,
-      nodir: true,
-      dot: true,
-      absolute: false,
-    });
-
-    for (const rel of homeMatches) {
-      const normalized = `~/${rel.replace(/\\/g, "/")}`;
-      if (seen.has(normalized)) continue;
-      seen.add(normalized);
-
-      files.push({
-        absolutePath: path.resolve(homeDir, rel),
-        relativePath: normalized,
-        type: classifyFile(rel),
+      const homeMatches = await glob(homePatterns, {
+        cwd: homeDir,
+        nodir: true,
+        dot: true,
+        absolute: false,
       });
+
+      for (const rel of homeMatches) {
+        const normalized = `~/${rel.replace(/\\/g, "/")}`;
+        if (seen.has(normalized)) continue;
+        seen.add(normalized);
+
+        files.push({
+          absolutePath: path.resolve(homeDir, rel),
+          relativePath: normalized,
+          type: classifyFile(rel),
+        });
+      }
     }
   }
 

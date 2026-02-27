@@ -43,11 +43,23 @@ function isSkillReferenced(skill: HarnessFile, otherFiles: HarnessFile[]): boole
       return true;
     }
 
-    // Check if the skill name or path appears in the file content
-    if (file.content.includes(skillPath) || (skillName && file.content.includes(skillName))) {
+    // Check if the skill path or name appears in the file content on exact boundaries
+    if (file.content.includes(skillPath)) {
       return true;
+    }
+    if (skillName) {
+      // Match on word boundaries to avoid substring false positives
+      // e.g., skill "test" should not match "contest" in content
+      const pattern = new RegExp(`(?:^|[\\s/\\[\\]("'])${escapeRegExp(skillName)}(?:[\\s/\\])"'.,;:!?]|\.md|$)`, "m");
+      if (pattern.test(file.content)) {
+        return true;
+      }
     }
   }
 
   return false;
+}
+
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

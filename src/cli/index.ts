@@ -1,10 +1,13 @@
 import { Command } from "commander";
 import fs from "node:fs/promises";
 import { resolve, dirname, relative } from "node:path";
+import { exec } from "node:child_process";
 import { detectHarnessFiles } from "../scanner/detector.js";
 import { parseFile } from "../scanner/parser.js";
 import { countTokens } from "../scanner/tokenizer.js";
 import { extractReferences } from "../scanner/reference.js";
+import { createServer } from "../server/index.js";
+import { lint, formatLintResults } from "../linter/index.js";
 import type { HarnessFile, HarnessGraph, HarnessEdge } from "../types/index.js";
 
 const program = new Command();
@@ -16,26 +19,33 @@ program
   .option("--json", "Output scan results as JSON")
   .option("--port <number>", "Dashboard server port", "3847")
   .option("--no-open", "Don't auto-open browser")
+  .option("--include-home", "Include ~/.claude/ files in scan")
   .action(async (opts) => {
     const rootPath = process.cwd();
+    const includeHome = opts.includeHome ?? false;
 
     try {
-      const graph = await scan(rootPath);
+      const graph = await scan(rootPath, { includeHome });
 
       if (opts.json) {
         console.log(JSON.stringify(graph, null, 2));
         return;
       }
 
-      // Default: print summary to console
+      // Default: print summary then start dashboard
       printSummary(graph);
 
-      // Dashboard stub (will be implemented in M2)
-      if (!opts.json) {
-        const port = parseInt(opts.port, 10);
-        console.log(
-          `\nDashboard: http://localhost:${port} (coming in v0.2)`
-        );
+      const port = parseInt(opts.port, 10);
+      createServer({ port, scanResult: graph });
+
+      if (opts.open !== false) {
+        const openCmd =
+          process.platform === "darwin"
+            ? "open"
+            : process.platform === "win32"
+              ? "start"
+              : "xdg-open";
+        exec(`${openCmd} http://127.0.0.1:${port}`);
       }
     } catch (err) {
       console.error("Error scanning harness files:", err);
@@ -46,13 +56,31 @@ program
 program
   .command("lint")
   .description("Run lint rules on harness files")
-  .action(async () => {
-    console.log("Lint command coming in M3.");
+  .option("--include-home", "Include ~/.claude/ files in scan")
+  .action(async (opts) => {
+    const rootPath = process.cwd();
+    const includeHome = opts.includeHome ?? false;
+
+    try {
+      const graph = await scan(rootPath, { includeHome });
+      const results = lint(graph.files, { rootPath });
+
+      console.log(`\n  harnify v0.1.0 — Lint Results\n`);
+      console.log(formatLintResults(results));
+
+      const errors = results.filter((r) => r.severity === "error");
+      if (errors.length > 0) {
+        process.exit(1);
+      }
+    } catch (err) {
+      console.error("Error running lint:", err);
+      process.exit(1);
+    }
   });
 
 /** Scan the project and build the harness graph */
-export async function scan(rootPath: string): Promise<HarnessGraph> {
-  const detected = await detectHarnessFiles(rootPath);
+export async function scan(rootPath: string, options?: { includeHome?: boolean }): Promise<HarnessGraph> {
+  const detected = await detectHarnessFiles(rootPath, { includeHome: options?.includeHome });
   const files: HarnessFile[] = [];
   const edges: HarnessEdge[] = [];
 
@@ -134,4 +162,7 @@ function printSummary(graph: HarnessGraph): void {
   }
 }
 
-program.parse(process.argv);
+// Only parse CLI args when run directly (not when imported by tests)
+if (!process.env.VITEST) {
+  program.parse(process.argv);
+}

@@ -13,9 +13,11 @@ export function triggerConflict(files: HarnessFile[]): LintResult[] {
 
   for (const skill of skills) {
     const triggers = extractTriggers(skill);
-    for (const trigger of triggers) {
-      const normalized = trigger.toLowerCase().trim();
-      if (!normalized) continue;
+    // Deduplicate triggers per skill to avoid counting the same skill multiple times
+    const uniqueTriggers = new Set(
+      triggers.map((t) => t.toLowerCase().trim()).filter(Boolean)
+    );
+    for (const normalized of uniqueTriggers) {
       const existing = triggerMap.get(normalized) ?? [];
       existing.push(skill);
       triggerMap.set(normalized, existing);

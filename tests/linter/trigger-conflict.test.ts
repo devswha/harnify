@@ -53,6 +53,20 @@ describe("trigger-conflict", () => {
     expect(results).toHaveLength(0);
   });
 
+  it("should not count same skill multiple times when trigger appears in both frontmatter and content", () => {
+    const files = [
+      makeSkill(".claude/skills/a.md", {
+        frontmatter: { trigger: "deploy" },
+        content: "Trigger: deploy\n\nThis skill deploys things",
+      }),
+      makeSkill(".claude/skills/b.md", { frontmatter: { trigger: "test" } }),
+    ];
+
+    const results = triggerConflict(files);
+    // "deploy" only comes from one skill file, so no conflict
+    expect(results).toHaveLength(0);
+  });
+
   it("should ignore non-skill files", () => {
     const files: HarnessFile[] = [
       {

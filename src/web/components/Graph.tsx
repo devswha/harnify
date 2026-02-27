@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import cytoscape, { Core, EventObject } from 'cytoscape';
-import type { GraphNode, GraphEdge } from '../App';
+import type { GraphNode, GraphEdge } from '../../types/index';
 
 interface GraphProps {
   graph: { nodes: GraphNode[]; edges: GraphEdge[] };

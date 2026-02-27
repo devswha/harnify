@@ -54,6 +54,47 @@ export interface HarnessGraph {
   scannedAt: string;
 }
 
+/** A node in the visualization graph */
+export interface GraphNode {
+  /** Node identifier (relative file path) */
+  id: string;
+  /** Display label */
+  label: string;
+  /** Node type from scanner classification */
+  type: NodeType;
+  /** Token count information */
+  tokenInfo: TokenInfo;
+  /** File path */
+  path: string;
+  /** Last modification timestamp (ISO string) */
+  lastModified: string;
+}
+
+/** An edge in the visualization graph */
+export interface GraphEdge {
+  /** Edge identifier */
+  id: string;
+  /** Source node id */
+  source: string;
+  /** Target node id */
+  target: string;
+  /** Relationship type */
+  type: EdgeType;
+}
+
+/** The API response shape returned by /api/scan */
+export interface ScanResult {
+  /** All detected harness files */
+  files: HarnessFile[];
+  /** Graph data for visualization */
+  graph: {
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+  };
+  /** Lint findings */
+  lintResults: LintResult[];
+}
+
 /** Lint rule severity */
 export type LintSeverity = "error" | "warning" | "info";
 

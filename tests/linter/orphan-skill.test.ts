@@ -66,6 +66,28 @@ describe("orphan-skill", () => {
     expect(results).toHaveLength(0);
   });
 
+  it("should not match skill name as substring of another word", () => {
+    const files = [
+      makeSkill(".claude/skills/test.md"),
+      makeConfig("CLAUDE.md", "Run the contest and detest all protests"),
+    ];
+
+    const results = orphanSkill(files);
+    // "test" is only a substring of "contest", "detest", "protests" — not an exact reference
+    expect(results).toHaveLength(1);
+    expect(results[0].file).toBe(".claude/skills/test.md");
+  });
+
+  it("should match skill name when it appears as a standalone word", () => {
+    const files = [
+      makeSkill(".claude/skills/test.md"),
+      makeConfig("CLAUDE.md", "Run the test suite after changes"),
+    ];
+
+    const results = orphanSkill(files);
+    expect(results).toHaveLength(0);
+  });
+
   it("should return empty when no skills exist", () => {
     const files = [makeConfig("CLAUDE.md", "# Config")];
     const results = orphanSkill(files);

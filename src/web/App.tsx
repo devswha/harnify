@@ -1,62 +1,30 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Graph } from './components/Graph';
 import { FileDetail } from './components/FileDetail';
 import { cn } from './lib/utils';
 import { Filter, LayoutDashboard, GitFork, X } from 'lucide-react';
+import type { HarnessFile, GraphNode, GraphEdge, ScanResult } from '../types/index';
 
-// Local type stubs (Worker 1 owns src/types/)
-export interface HarnessFile {
-  path: string;
-  type: string;
-  tokenInfo: { tokens: number; bytes: number };
-  content: string;
-  lastModified: string;
-  references: string[];
-}
+export type { HarnessFile, GraphNode, GraphEdge, ScanResult };
 
-export interface GraphNode {
-  id: string;
-  label: string;
-  type: string;
-  tokenInfo: { tokens: number; bytes: number };
-  path: string;
-  lastModified: string;
-}
-
-export interface GraphEdge {
-  id: string;
-  source: string;
-  target: string;
-  type: 'references' | 'overrides' | 'triggers' | 'includes';
-}
-
-export interface HarnessGraph {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-}
-
-export interface ScanResult {
-  files: HarnessFile[];
-  graph: HarnessGraph;
-  lintResults: unknown[];
-}
-
+/** Colors keyed by the scanner's canonical NodeType values */
 const NODE_TYPE_COLORS: Record<string, string> = {
-  'root-config': '#3B82F6',
-  'agent-config': '#22C55E',
+  'config': '#3B82F6',
+  'agent': '#22C55E',
   'skill': '#EAB308',
-  'doc-reference': '#9CA3AF',
-  'external-tool': '#A855F7',
-  'rule-file': '#F97316',
+  'doc': '#9CA3AF',
+  'rule': '#F97316',
+  'settings': '#A855F7',
 };
 
+/** Display labels keyed by the scanner's canonical NodeType values */
 const NODE_TYPE_LABELS: Record<string, string> = {
-  'root-config': 'Root Config',
-  'agent-config': 'Agent Config',
+  'config': 'Root Config',
+  'agent': 'Agent Config',
   'skill': 'Skill',
-  'doc-reference': 'Doc Reference',
-  'external-tool': 'External Tool',
-  'rule-file': 'Rule File',
+  'doc': 'Doc Reference',
+  'rule': 'Rule File',
+  'settings': 'Settings',
 };
 
 type LayoutMode = 'hierarchical' | 'force-directed';
