@@ -2,12 +2,14 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { FileDetail } from '../../src/web/components/FileDetail';
-import type { HarnessFile } from '../../src/web/App';
+import type { HarnessFile } from '../../src/types/index';
 
 const sampleFile: HarnessFile = {
-  path: 'CLAUDE.md',
-  type: 'root-config',
+  path: '/tmp/test/CLAUDE.md',
+  relativePath: 'CLAUDE.md',
+  type: 'config',
   tokenInfo: { tokens: 2340, bytes: 9360 },
+  frontmatter: null,
   content: '# Project Rules\n\nSome content here.',
   lastModified: '2026-02-27T10:30:00Z',
   references: ['AGENTS.md', '.claude/skills/test.md'],
@@ -17,8 +19,8 @@ describe('FileDetail component', () => {
   it('renders file metadata', () => {
     render(<FileDetail file={sampleFile} />);
 
-    expect(screen.getByText('Root Config')).toBeInTheDocument();
-    expect(screen.getByText('CLAUDE.md')).toBeInTheDocument();
+    expect(screen.getByText('Config')).toBeInTheDocument();
+    expect(screen.getByText('/tmp/test/CLAUDE.md')).toBeInTheDocument();
     expect(screen.getByText('2,340')).toBeInTheDocument();
   });
 

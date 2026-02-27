@@ -7,7 +7,7 @@
     "harnify": "dist/cli/index.cjs"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && vite build",
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest"

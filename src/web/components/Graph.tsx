@@ -13,7 +13,6 @@ const EDGE_STYLES: Record<string, { lineStyle: string; lineColor: string }> = {
   references: { lineStyle: 'solid', lineColor: '#6366F1' },
   overrides: { lineStyle: 'dashed', lineColor: '#EF4444' },
   triggers: { lineStyle: 'dotted', lineColor: '#F59E0B' },
-  includes: { lineStyle: 'solid', lineColor: '#6B7280' },
 };
 
 export function Graph({ graph, layout, onNodeClick, nodeTypeColors }: GraphProps) {
@@ -125,14 +124,6 @@ export function Graph({ graph, layout, onNodeClick, nodeTypeColors }: GraphProps
             'line-style': 'dotted',
             'line-color': '#F59E0B',
             'target-arrow-color': '#F59E0B',
-          },
-        },
-        {
-          selector: 'edge[edgeType="includes"]',
-          style: {
-            'line-style': 'solid',
-            'line-color': '#6B7280',
-            'target-arrow-color': '#6B7280',
           },
         },
       ],

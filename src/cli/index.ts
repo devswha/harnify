@@ -36,7 +36,8 @@ program
       printSummary(graph);
 
       const port = parseInt(opts.port, 10);
-      createServer({ port, scanResult: graph });
+      const lintResults = lint(graph.files, { rootPath });
+      createServer({ port, scanResult: graph, lintResults });
 
       if (opts.open !== false) {
         const url = `http://127.0.0.1:${port}`;

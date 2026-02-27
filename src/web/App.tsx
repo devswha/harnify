@@ -61,7 +61,7 @@ export default function App() {
   const handleNodeClick = useCallback(
     (nodeId: string) => {
       if (!scanResult) return;
-      const file = scanResult.files.find((f) => f.path === nodeId);
+      const file = scanResult.files.find((f) => f.relativePath === nodeId || f.path === nodeId);
       if (file) setSelectedFile(file);
     },
     [scanResult],

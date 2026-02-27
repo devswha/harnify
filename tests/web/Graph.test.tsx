@@ -16,23 +16,23 @@ vi.mock('cytoscape', () => {
 });
 
 const nodeTypeColors: Record<string, string> = {
-  'root-config': '#3B82F6',
-  'agent-config': '#22C55E',
+  'config': '#3B82F6',
+  'agent': '#22C55E',
   'skill': '#EAB308',
-  'doc-reference': '#9CA3AF',
-  'external-tool': '#A855F7',
-  'rule-file': '#F97316',
+  'doc': '#9CA3AF',
+  'rule': '#F97316',
+  'settings': '#A855F7',
 };
 
 const sampleGraph = {
   nodes: [
-    { id: 'CLAUDE.md', label: 'CLAUDE.md', type: 'root-config', tokens: 2340, path: 'CLAUDE.md', lastModified: '2026-02-27T00:00:00Z' },
-    { id: 'AGENTS.md', label: 'AGENTS.md', type: 'agent-config', tokens: 890, path: 'AGENTS.md', lastModified: '2026-02-26T00:00:00Z' },
-    { id: '.claude/skills/test.md', label: 'test.md', type: 'skill', tokens: 450, path: '.claude/skills/test.md', lastModified: '2026-02-25T00:00:00Z' },
+    { id: 'CLAUDE.md', label: 'CLAUDE.md', type: 'config' as const, tokenInfo: { tokens: 2340, bytes: 9360 }, path: 'CLAUDE.md', lastModified: '2026-02-27T00:00:00Z' },
+    { id: 'AGENTS.md', label: 'AGENTS.md', type: 'agent' as const, tokenInfo: { tokens: 890, bytes: 3560 }, path: 'AGENTS.md', lastModified: '2026-02-26T00:00:00Z' },
+    { id: '.claude/skills/test.md', label: 'test.md', type: 'skill' as const, tokenInfo: { tokens: 450, bytes: 1800 }, path: '.claude/skills/test.md', lastModified: '2026-02-25T00:00:00Z' },
   ],
   edges: [
     { id: 'e1', source: 'CLAUDE.md', target: 'AGENTS.md', type: 'references' as const },
-    { id: 'e2', source: 'CLAUDE.md', target: '.claude/skills/test.md', type: 'includes' as const },
+    { id: 'e2', source: 'CLAUDE.md', target: '.claude/skills/test.md', type: 'references' as const },
   ],
 };
 
@@ -74,12 +74,12 @@ describe('Graph component', () => {
       />,
     );
 
-    expect(screen.getByText('root config')).toBeInTheDocument();
-    expect(screen.getByText('agent config')).toBeInTheDocument();
+    expect(screen.getByText('config')).toBeInTheDocument();
+    expect(screen.getByText('agent')).toBeInTheDocument();
     expect(screen.getByText('skill')).toBeInTheDocument();
-    expect(screen.getByText('doc reference')).toBeInTheDocument();
-    expect(screen.getByText('external tool')).toBeInTheDocument();
-    expect(screen.getByText('rule file')).toBeInTheDocument();
+    expect(screen.getByText('doc')).toBeInTheDocument();
+    expect(screen.getByText('rule')).toBeInTheDocument();
+    expect(screen.getByText('settings')).toBeInTheDocument();
   });
 
   it('renders edge type legend', () => {
@@ -95,7 +95,6 @@ describe('Graph component', () => {
     expect(screen.getByText('references')).toBeInTheDocument();
     expect(screen.getByText('overrides')).toBeInTheDocument();
     expect(screen.getByText('triggers')).toBeInTheDocument();
-    expect(screen.getByText('includes')).toBeInTheDocument();
   });
 
   it('renders with empty graph', () => {

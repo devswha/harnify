@@ -13,6 +13,24 @@ export interface ServerOptions {
   lintResults?: import('../types/index.js').LintResult[];
 }
 
+// Mask potentially sensitive values in content before sending over API
+function maskSensitiveContent(content: string): string {
+  const patterns = [
+    /(api[_-]?key|token|secret|password|credential|auth[_-]?token|private[_-]?key|access[_-]?key|client[_-]?secret)\s*[:=]\s*["']?([^\s"'\n,}]+)/gi,
+    /("(?:api[_-]?key|token|secret|password|credential|auth[_-]?token|private[_-]?key|access[_-]?key|client[_-]?secret)")\s*:\s*"([^"]+)"/gi,
+    /(Bearer)\s+([A-Za-z0-9_.~+/=-]{10,})/g,
+    /\b(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{36,}|xoxb-[A-Za-z0-9-]+|AKIA[A-Z0-9]{16})\b/g,
+  ];
+  let masked = content;
+  for (const pattern of patterns) {
+    masked = masked.replace(pattern, (match, key) => {
+      if (typeof key === 'string' && match.length > key.length) return `${key}: [REDACTED]`;
+      return '[REDACTED]';
+    });
+  }
+  return masked;
+}
+
 /** Transform the internal HarnessGraph into the API ScanResult shape */
 function toScanResult(graph: HarnessGraph, lintResults: import('../types/index.js').LintResult[] = []): ScanResult {
   const nodes = graph.files.map((f) => ({
@@ -31,8 +49,14 @@ function toScanResult(graph: HarnessGraph, lintResults: import('../types/index.j
     type: e.type,
   }));
 
+  // Redact sensitive content server-side before sending to clients
+  const sanitizedFiles = graph.files.map((f) => ({
+    ...f,
+    content: maskSensitiveContent(f.content),
+  }));
+
   return {
-    files: graph.files,
+    files: sanitizedFiles,
     graph: { nodes, edges },
     lintResults,
   };
