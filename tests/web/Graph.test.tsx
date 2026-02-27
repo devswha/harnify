@@ -111,4 +111,30 @@ describe('Graph component', () => {
     expect(screen.getByText(/0 nodes/)).toBeInTheDocument();
     expect(screen.getByText(/0 edges/)).toBeInTheDocument();
   });
+
+  it('renders legend with shape SVGs for each node type', () => {
+    const { container } = render(
+      <Graph
+        graph={sampleGraph}
+        layout="hierarchical"
+        onNodeClick={vi.fn()}
+        nodeTypeColors={nodeTypeColors}
+      />,
+    );
+
+    // 6 node type shape SVGs + 3 edge type line SVGs
+    const legendSvgs = container.querySelectorAll('svg');
+    expect(legendSvgs.length).toBe(9);
+
+    // Verify specific shapes: ellipse types get <circle>, round-rectangle get <rect>, etc.
+    const circles = container.querySelectorAll('svg circle');
+    const rects = container.querySelectorAll('svg rect');
+    const polygons = container.querySelectorAll('svg polygon');
+    // config=circle, settings=circle → 2 circles
+    expect(circles.length).toBe(2);
+    // agent=rect, skill=rect → 2 rects
+    expect(rects.length).toBe(2);
+    // rule=diamond(polygon), doc=hexagon(polygon) → 2 polygons
+    expect(polygons.length).toBe(2);
+  });
 });
