@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Graph } from './components/Graph';
 import { FileDetail } from './components/FileDetail';
+import { TokenPanel } from './components/TokenPanel';
+import { LintReport } from './components/LintReport';
 import { cn } from './lib/utils';
-import { Filter, LayoutDashboard, GitFork, X } from 'lucide-react';
+import { Filter, LayoutDashboard, GitFork, X, BarChart3, AlertTriangle } from 'lucide-react';
 import type { HarnessFile, GraphNode, GraphEdge, ScanResult } from '../types/index';
 
 export type { HarnessFile, GraphNode, GraphEdge, ScanResult };
@@ -28,6 +30,7 @@ const NODE_TYPE_LABELS: Record<string, string> = {
 };
 
 type LayoutMode = 'hierarchical' | 'force-directed';
+type BottomPanel = 'none' | 'tokens' | 'lint';
 
 export default function App() {
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
@@ -37,6 +40,7 @@ export default function App() {
   const [layout, setLayout] = useState<LayoutMode>('hierarchical');
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [bottomPanel, setBottomPanel] = useState<BottomPanel>('none');
 
   useEffect(() => {
     fetch('/api/scan')
@@ -75,22 +79,17 @@ export default function App() {
     });
   };
 
-  const filteredGraph = scanResult
-    ? {
-        nodes: scanResult.graph.nodes.filter(
-          (n) => activeFilters.size === 0 || activeFilters.has(n.type),
-        ),
-        edges: scanResult.graph.edges.filter((e) => {
-          if (activeFilters.size === 0) return true;
-          const nodeIds = new Set(
-            scanResult.graph.nodes
-              .filter((n) => activeFilters.has(n.type))
-              .map((n) => n.id),
-          );
-          return nodeIds.has(e.source) && nodeIds.has(e.target);
-        }),
-      }
-    : null;
+  const filteredGraph = useMemo(() => {
+    if (!scanResult) return null;
+    const nodes = scanResult.graph.nodes.filter(
+      (n) => activeFilters.size === 0 || activeFilters.has(n.type),
+    );
+    const nodeIds = new Set(nodes.map((n) => n.id));
+    const edges = scanResult.graph.edges.filter(
+      (e) => nodeIds.has(e.source) && nodeIds.has(e.target),
+    );
+    return { nodes, edges };
+  }, [scanResult, activeFilters]);
 
   if (loading) {
     return (
@@ -163,6 +162,39 @@ export default function App() {
               </span>
             )}
           </button>
+
+          {/* Token Budget toggle */}
+          <button
+            onClick={() => setBottomPanel((p) => (p === 'tokens' ? 'none' : 'tokens'))}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+              'hover:bg-accent hover:text-accent-foreground',
+              'border border-border',
+              bottomPanel === 'tokens' && 'bg-accent text-accent-foreground',
+            )}
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span>Tokens</span>
+          </button>
+
+          {/* Lint Report toggle */}
+          <button
+            onClick={() => setBottomPanel((p) => (p === 'lint' ? 'none' : 'lint'))}
+            className={cn(
+              'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+              'hover:bg-accent hover:text-accent-foreground',
+              'border border-border',
+              bottomPanel === 'lint' && 'bg-accent text-accent-foreground',
+            )}
+          >
+            <AlertTriangle className="h-3.5 w-3.5" />
+            <span>Lint</span>
+            {(scanResult?.lintResults?.length ?? 0) > 0 && (
+              <span className="ml-1 rounded-full bg-destructive px-1.5 text-[10px] text-destructive-foreground">
+                {scanResult!.lintResults.length}
+              </span>
+            )}
+          </button>
         </div>
       </header>
 
@@ -201,17 +233,38 @@ export default function App() {
           </aside>
         )}
 
-        {/* Graph area */}
-        <main className="flex-1 relative">
-          {filteredGraph && (
-            <Graph
-              graph={filteredGraph}
-              layout={layout}
-              onNodeClick={handleNodeClick}
-              nodeTypeColors={NODE_TYPE_COLORS}
-            />
+        {/* Main content area */}
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {/* Graph area */}
+          <main className="flex-1 relative">
+            {filteredGraph && (
+              <Graph
+                graph={filteredGraph}
+                layout={layout}
+                onNodeClick={handleNodeClick}
+                nodeTypeColors={NODE_TYPE_COLORS}
+              />
+            )}
+          </main>
+
+          {/* Bottom panel: Token Budget or Lint Report */}
+          {bottomPanel !== 'none' && scanResult && (
+            <div className="shrink-0 border-t max-h-64 overflow-y-auto p-3">
+              {bottomPanel === 'tokens' && (
+                <TokenPanel files={scanResult.files} />
+              )}
+              {bottomPanel === 'lint' && (
+                <LintReport
+                  results={scanResult.lintResults}
+                  onFileClick={(filePath) => {
+                    const file = scanResult.files.find((f) => f.relativePath === filePath || f.path === filePath);
+                    if (file) setSelectedFile(file);
+                  }}
+                />
+              )}
+            </div>
           )}
-        </main>
+        </div>
 
         {/* File detail panel */}
         {selectedFile && (

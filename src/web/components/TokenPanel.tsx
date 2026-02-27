@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import type { HarnessFile } from "../../types/index.js";
 
 interface TokenPanelProps {

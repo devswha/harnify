@@ -1,4 +1,3 @@
-import React from "react";
 import type { LintResult } from "../../types/index.js";
 
 interface LintReportProps {

@@ -58,8 +58,8 @@ export function createServer({ port, scanResult, lintResults }: ServerOptions) {
   const webDir = path.resolve(__dirname, '../web');
   app.use(express.static(webDir));
 
-  // SPA fallback
-  app.get('*', (_req, res) => {
+  // SPA fallback (Express v5 path-to-regexp syntax)
+  app.get('{*path}', (_req, res) => {
     res.sendFile(path.join(webDir, 'index.html'));
   });
 

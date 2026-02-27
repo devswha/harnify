@@ -87,14 +87,20 @@ function findOverlaps(parentRules: string[], childRules: string[]): string[] {
 
   for (const childRule of childRules) {
     for (const parentRule of parentRules) {
-      // Check for significant keyword overlap (at least 3 shared words)
+      // Check for significant keyword overlap
       const childWords = new Set(childRule.split(/\s+/).filter((w) => w.length > 3));
       const parentWords = new Set(parentRule.split(/\s+/).filter((w) => w.length > 3));
+
+      if (childWords.size === 0 || parentWords.size === 0) continue;
+
       let shared = 0;
       for (const word of childWords) {
         if (parentWords.has(word)) shared++;
       }
-      if (shared >= 3) {
+
+      // Require at least 2 shared words AND >40% overlap ratio
+      const overlapRatio = shared / Math.min(childWords.size, parentWords.size);
+      if (shared >= 2 && overlapRatio >= 0.4) {
         overlaps.push(childRule.slice(0, 80));
         break;
       }

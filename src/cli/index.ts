@@ -1,7 +1,7 @@
 import { Command } from "commander";
 import fs from "node:fs/promises";
 import { resolve, dirname, relative } from "node:path";
-import { exec } from "node:child_process";
+import { execFile } from "node:child_process";
 import { detectHarnessFiles } from "../scanner/detector.js";
 import { parseFile } from "../scanner/parser.js";
 import { countTokens } from "../scanner/tokenizer.js";
@@ -39,13 +39,18 @@ program
       createServer({ port, scanResult: graph });
 
       if (opts.open !== false) {
+        const url = `http://127.0.0.1:${port}`;
         const openCmd =
           process.platform === "darwin"
             ? "open"
             : process.platform === "win32"
-              ? "start"
+              ? "cmd"
               : "xdg-open";
-        exec(`${openCmd} http://127.0.0.1:${port}`);
+        const args =
+          process.platform === "win32"
+            ? ["/c", "start", url]
+            : [url];
+        execFile(openCmd, args, () => {});
       }
     } catch (err) {
       console.error("Error scanning harness files:", err);
@@ -78,46 +83,60 @@ program
     }
   });
 
+/** Process a single detected file into a HarnessFile + edges */
+async function processFile(
+  det: { absolutePath: string; relativePath: string; type: string },
+  rootPath: string,
+): Promise<{ file: HarnessFile; edges: HarnessEdge[] } | null> {
+  try {
+    const [parsed, stat] = await Promise.all([
+      parseFile(det.absolutePath),
+      fs.stat(det.absolutePath),
+    ]);
+    const tokenInfo = countTokens(parsed.content);
+    const references = det.absolutePath.endsWith(".md")
+      ? extractReferences(parsed.content)
+      : [];
+
+    const file: HarnessFile = {
+      path: det.absolutePath,
+      relativePath: det.relativePath,
+      type: det.type as HarnessFile["type"],
+      tokenInfo,
+      frontmatter: parsed.frontmatter,
+      content: parsed.content,
+      lastModified: stat.mtime.toISOString(),
+      references,
+    };
+
+    const edges: HarnessEdge[] = references.map((ref) => {
+      const absRef = resolve(dirname(det.absolutePath), ref);
+      const relRef = relative(rootPath, absRef);
+      return { source: det.relativePath, target: relRef, type: "references" as const };
+    });
+
+    return { file, edges };
+  } catch (err) {
+    console.warn(`Warning: Could not read ${det.relativePath}: ${err}`);
+    return null;
+  }
+}
+
 /** Scan the project and build the harness graph */
 export async function scan(rootPath: string, options?: { includeHome?: boolean }): Promise<HarnessGraph> {
   const detected = await detectHarnessFiles(rootPath, { includeHome: options?.includeHome });
+
+  const results = await Promise.all(
+    detected.map((det) => processFile(det, rootPath)),
+  );
+
   const files: HarnessFile[] = [];
   const edges: HarnessEdge[] = [];
 
-  for (const det of detected) {
-    try {
-      const parsed = await parseFile(det.absolutePath);
-      const tokenInfo = countTokens(parsed.content);
-      const stat = await fs.stat(det.absolutePath);
-      const references = det.absolutePath.endsWith(".md")
-        ? extractReferences(parsed.content)
-        : [];
-
-      files.push({
-        path: det.absolutePath,
-        relativePath: det.relativePath,
-        type: det.type,
-        tokenInfo,
-        frontmatter: parsed.frontmatter,
-        content: parsed.content,
-        lastModified: stat.mtime.toISOString(),
-        references,
-      });
-
-      // Build edges from references
-      for (const ref of references) {
-        // Resolve reference relative to the source file's directory
-        const absRef = resolve(dirname(det.absolutePath), ref);
-        const relRef = relative(rootPath, absRef);
-        edges.push({
-          source: det.relativePath,
-          target: relRef,
-          type: "references",
-        });
-      }
-    } catch (err) {
-      // Skip files that can't be read (permissions, etc.)
-      console.warn(`Warning: Could not read ${det.relativePath}: ${err}`);
+  for (const result of results) {
+    if (result) {
+      files.push(result.file);
+      edges.push(...result.edges);
     }
   }
 

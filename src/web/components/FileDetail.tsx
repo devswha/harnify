@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '../lib/utils';
 import { FileText, Clock, Hash, Link, ChevronDown, ChevronRight } from 'lucide-react';
 import type { HarnessFile } from '../App';
@@ -9,10 +9,28 @@ interface FileDetailProps {
 
 // Mask potentially sensitive values in content
 function maskSensitive(content: string): string {
-  return content.replace(
-    /(api[_-]?key|token|secret|password|credential|auth)\s*[:=]\s*["']?([^\s"']+)/gi,
-    (_match, key) => `${key}: [MASKED]`,
-  );
+  const patterns = [
+    // key=value or key: value (env-style, YAML, markdown)
+    /(api[_-]?key|token|secret|password|credential|auth[_-]?token|private[_-]?key|access[_-]?key|client[_-]?secret)\s*[:=]\s*["']?([^\s"'\n,}]+)/gi,
+    // JSON "KEY": "value"
+    /("(?:api[_-]?key|token|secret|password|credential|auth[_-]?token|private[_-]?key|access[_-]?key|client[_-]?secret)")\s*:\s*"([^"]+)"/gi,
+    // Bearer tokens
+    /(Bearer)\s+([A-Za-z0-9_.~+/=-]{10,})/g,
+    // Common secret prefixes (sk-, ghp_, xoxb-, etc.)
+    /\b(sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{36,}|xoxb-[A-Za-z0-9-]+|AKIA[A-Z0-9]{16})\b/g,
+  ];
+
+  let masked = content;
+  for (const pattern of patterns) {
+    masked = masked.replace(pattern, (match, key) => {
+      // For patterns with a captured key prefix, keep the key
+      if (typeof key === 'string' && match.length > key.length) {
+        return `${key}: [MASKED]`;
+      }
+      return '[MASKED]';
+    });
+  }
+  return masked;
 }
 
 export function FileDetail({ file }: FileDetailProps) {

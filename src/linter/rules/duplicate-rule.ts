@@ -62,11 +62,11 @@ function extractNormalizedDirectives(content: string): string[] {
   for (const line of lines) {
     const trimmed = line.trim();
 
-    // Match bullet-point directives (-, *)
-    const bulletMatch = trimmed.match(/^[-*]\s+(.{15,})$/);
+    // Match bullet-point directives (-, *) with meaningful content (10+ chars)
+    const bulletMatch = trimmed.match(/^[-*]\s+(.{10,})$/);
     if (bulletMatch) {
       const normalized = normalize(bulletMatch[1]);
-      if (normalized.length >= 15) {
+      if (normalized.length >= 10) {
         directives.push(normalized);
       }
     }
